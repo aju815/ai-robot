@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+
+# Runtime output
+/holo_robot_*.png
+/logs/
+/recordings/
+/screenshots/gesturear_*.png
+/screenshots/mindreader_*.png

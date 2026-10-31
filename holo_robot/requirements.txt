@@ -1,0 +1,5 @@
+mediapipe==0.10.14
+numpy<2
+opencv-contrib-python>=4.9,<5
+moderngl>=5.10,<6
+glcontext>=3.0,<4
