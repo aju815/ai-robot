@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-SHANIB AJU ROBOT 3D  v14.0  -  single file, HOLOGRAM-GLASS premium interface with VOICE
+SHANIB AJU ROBOT 3D  v16.0  -  Intelligent Robotics Studio with VOICE
 =============================================================================
 Same robot, same head / hand / face tracking, same voice and AI brain as v13.1 -
-but the whole look is rebuilt to match a high-end sci-fi hologram:
+with a more focused, professional studio interface:
 
-    * the robot is now a translucent GLASS HOLOGRAM: ice-teal glass body + glowing wireframe,
-      hidden back edges visible (x-ray), selected part glows orange
-    * deep teal-black studio, soft light pillar, glowing multi-ring projector base,
+    * the robot remains a translucent GLASS HOLOGRAM with a crisp cyan wireframe,
+      hidden back edges visible (x-ray), and selected parts highlighted in amber
+    * a deep navy studio, soft light pillar, restrained projector rings,
       rotating segmented rings, orbiting energy orbs with orbit paths
-    * the CoreMicron logo is fitted into the top-right header, not used as a background
-    * floating holographic cards: BLUEPRINT dial/bars (left) and LIVE SCAN wireframe (right)
-    * chamfered glass panels with scan-lines, glowing hairline borders and corner brackets
+    * a structured control-room layout with live tracking, motion telemetry, AI guidance,
+      voice interaction, and a compact shortcut bar
+    * clean glass panels, subtle borders, readable labels, and a consistent cyan-and-amber accent
 
 TALK TO THE ROBOT
     just speak: your words appear as text (YOU SAID) and the robot answers in a speech
@@ -83,27 +83,27 @@ try:
 except ImportError:
     NSBitmapImageRep = None
 
-APP_VERSION = "14.0"
+APP_VERSION = "16.0"
 ROBOT_NAME = "Shanib Aju"
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 FONT_D = cv2.FONT_HERSHEY_DUPLEX
 AA = cv2.LINE_AA
 
-# ---- hologram palette (BGR): teal-cyan glass on a deep teal-black stage
-CYAN = (225, 236, 78)
-CYAN_DIM = (122, 128, 32)
-CYAN_DARK = (62, 66, 16)
+# ---- studio palette (BGR): crisp cyan, warm amber, and deep navy
+CYAN = (232, 194, 88)
+CYAN_DIM = (116, 101, 58)
+CYAN_DARK = (53, 43, 27)
 WHITE = (255, 255, 255)
-ORANGE = (40, 160, 255)
-GOOD = (130, 255, 170)
+ORANGE = (70, 165, 255)
+GOOD = (130, 225, 120)
 GREY = (190, 190, 190)
-RED = (80, 80, 255)
+RED = (75, 70, 245)
 
-INK1 = (250, 252, 246)       # primary text
-INK2 = (208, 208, 172)       # secondary text
-INK3 = (142, 142, 104)       # tertiary / labels
-HAIR = (72, 70, 30)          # hairline rules
-HAIR2 = (112, 110, 50)       # stronger hairline
+INK1 = (247, 249, 252)       # primary text
+INK2 = (198, 211, 226)       # secondary text
+INK3 = (135, 154, 176)       # tertiary / labels
+HAIR = (52, 65, 82)          # hairline rules
+HAIR2 = (82, 108, 132)       # stronger hairline
 
 HAND_CONN = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 5), (5, 6), (6, 7), (7, 8), (5, 9), (9, 10),
              (10, 11), (11, 12), (9, 13), (13, 14), (14, 15), (15, 16), (13, 17), (17, 18),
@@ -116,8 +116,8 @@ MAT_COL = np.array([
 ], np.float32)  # BGR (kept for reference)
 # hologram glass colours per material (BGR)
 HOLO_COL = np.array([
-    [238, 240, 205], [78, 94, 40], [255, 255, 150], [186, 192, 132],
-    [98, 124, 60], [218, 192, 84], [122, 130, 58], [236, 238, 178],
+    [238, 245, 250], [112, 91, 70], [245, 252, 255], [188, 202, 220],
+    [125, 151, 179], [206, 147, 94], [116, 108, 87], [238, 244, 251],
 ], np.float32)
 MAT_SPEC = np.array([0.60, 0.40, 0.0, 0.30, 0.12, 0.08, 0.06, 0.10], np.float32)
 WHITE_M, BLACK_M, EYE_M, METAL_M, HAIR_M, SHIRT_M, PANTS_M, FABRIC_TRIM_M = range(8)
@@ -1089,17 +1089,16 @@ def _glass_assets(pw, ph, r):
     shadow = cv2.GaussianBlur(big, (0, 0), 8).astype(np.float32) / 255.0
     edge = cv2.subtract(mask, cv2.erode(mask, np.ones((3, 3), np.uint8))) > 0
     t = np.linspace(0, 1, ph, dtype=np.float32)[:, None, None]
-    grad = np.array((34, 30, 8), np.float32) * (1 - t) + np.array((15, 13, 4), np.float32) * t
+    grad = np.array((40, 32, 25), np.float32) * (1 - t) + np.array((27, 21, 16), np.float32) * t
     grad = np.broadcast_to(grad, (ph, pw, 3)).copy()
-    ecol = np.array((196, 206, 76), np.float32) * (1 - t) + np.array((74, 80, 26), np.float32) * t
+    ecol = np.array((125, 106, 85), np.float32) * (1 - t) + np.array((78, 70, 57), np.float32) * t
     ecol = np.broadcast_to(ecol, (ph, pw, 3)).copy()
     return shadow, mask.astype(np.float32)[..., None] / 255.0, edge, grad, ecol
 
 
 def glass_panel(image, x0, y0, x1, y1, title=None, accent=CYAN, radius=14, alpha=0.88,
                 rule_end=None):
-    """Holographic glass card: chamfered corners, soft drop shadow, blurred backdrop, teal tint,
-    scan-lines, glowing gradient hairline border, corner brackets and a letter-spaced title."""
+    """Draw a clean glass card with a soft shadow, restrained border, and letter-spaced title."""
     H, W = image.shape[:2]
     x0, y0 = max(int(x0), 0), max(int(y0), 0)
     x1, y1 = min(int(x1), W), min(int(y1), H)
@@ -1123,16 +1122,15 @@ def glass_panel(image, x0, y0, x1, y1, title=None, accent=CYAN, radius=14, alpha
     body = back * 0.34 + grad * 0.66
     a = mask * alpha
     out = roi.astype(np.float32) * (1 - a) + body * a
-    out[::3] *= (1 - 0.08 * a[::3])                          # holographic scan-lines
-    out[edge] = out[edge] * 0.20 + ecol[edge] * 0.80
+    out[edge] = out[edge] * 0.42 + ecol[edge] * 0.58
     roi[:] = np.clip(out, 0, 255).astype(np.uint8)
     if accent is not None:
-        cv2.line(image, (x0 + r + 3, y0), (x0 + r + 46, y0), accent, 2, AA)
-        ln = 12
-        cv2.line(image, (x1 - 1, y0), (x1 - 1 - ln, y0), accent, 2, AA)
-        cv2.line(image, (x1 - 1, y0), (x1 - 1, y0 + ln), accent, 2, AA)
-        cv2.line(image, (x0, y1 - 1), (x0 + ln, y1 - 1), accent, 2, AA)
-        cv2.line(image, (x0, y1 - 1), (x0, y1 - 1 - ln), accent, 2, AA)
+        cv2.line(image, (x0 + r + 3, y0), (x0 + r + 42, y0), accent, 1, AA)
+        ln = 8
+        cv2.line(image, (x1 - 1, y0), (x1 - 1 - ln, y0), accent, 1, AA)
+        cv2.line(image, (x1 - 1, y0), (x1 - 1, y0 + ln), accent, 1, AA)
+        cv2.line(image, (x0, y1 - 1), (x0 + ln, y1 - 1), accent, 1, AA)
+        cv2.line(image, (x0, y1 - 1), (x0, y1 - 1 - ln), accent, 1, AA)
     if title:
         cv2.circle(image, (x0 + 19, y0 + 20), 3, accent if accent is not None else CYAN, -1, AA)
         rx = rule_end if rule_end is not None else x1 - 16
@@ -1251,23 +1249,22 @@ def video_background(frame, w, h, dim):
 
 
 def studio_background(w, h):
-    """Deep teal-black stage with a soft central light pillar."""
+    """Deep navy stage with a soft central light pillar."""
     key = ("studio", w, h)
     if key not in _VIG:
         ys = np.linspace(0, 1, h, dtype=np.float32)[:, None, None]
-        bg = np.array([30, 27, 9], np.float32) * (1 - ys) + np.array([11, 10, 4], np.float32) * ys
+        bg = np.array([25, 20, 15], np.float32) * (1 - ys) + np.array([13, 11, 9], np.float32) * ys
         bg = np.broadcast_to(bg, (h, w, 3)).copy()
         yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
         r = np.sqrt(((xx - w / 2) / (w * 0.56)) ** 2 + ((yy - h * 0.48) / (h * 0.74)) ** 2)
         bg *= np.clip(1.28 - r * 0.70, 0.30, 1.12)[..., None]
         halo = np.exp(-(((xx - w * 0.50) / (w * 0.30)) ** 2
                         + ((yy - h * 0.50) / (h * 0.52)) ** 2) * 2.2)
-        bg += halo[..., None] * np.array((24, 22, 4), np.float32)
+        bg += halo[..., None] * np.array((30, 18, 8), np.float32)
         pillar = np.exp(-(((xx - w * 0.50) / (w * 0.085)) ** 2)) * np.clip(1.0 - yy / h * 0.55, 0, 1)
-        bg += pillar[..., None] * np.array((9, 9, 2), np.float32)           # faint light pillar
+        bg += pillar[..., None] * np.array((25, 18, 8), np.float32)          # faint light pillar
         floor = np.exp(-(((yy - h * 0.86) / (h * 0.10)) ** 2)) * np.exp(-(((xx - w * 0.5) / (w * 0.34)) ** 2))
-        bg += floor[..., None] * np.array((26, 26, 5), np.float32)          # base glow on the floor
-        bg[::4] *= 0.94                                                    # faint scanlines
+        bg += floor[..., None] * np.array((40, 34, 14), np.float32)         # base glow on the floor
         _VIG[key] = np.clip(bg, 0, 255).astype(np.uint8)
     return _VIG[key].copy()
 
@@ -1774,7 +1771,7 @@ class App:
         self.m_last = None
         self.m_moved = False
         rs = np.random.RandomState(7)
-        self.pn = 110                                  # hologram particles
+        self.pn = 48                                   # restrained ambient hologram particles
         self.p_ang = rs.uniform(0, 2 * math.pi, self.pn)
         self.p_rad = rs.uniform(0.18, 1.10, self.pn)
         self.p_y = rs.uniform(0, 1, self.pn)
@@ -2355,8 +2352,8 @@ class App:
         for rad, col, th in ((0.95, CYAN, 2), (0.80, CYAN_DIM, 1), (0.62, CYAN, 1), (0.40, CYAN_DIM, 1),
                              (0.22, CYAN, 1), (1.12, CYAN_DIM, 1)):
             poly(ring_pts(rad), col, th, True)
-        for k in range(48):
-            a = k * (2 * math.pi / 48) + t * 0.25
+        for k in range(32):
+            a = k * (2 * math.pi / 32) + t * 0.16
             ln = 0.07 if k % 4 == 0 else 0.035
             seg = np.array([[math.cos(a) * 0.95, 0, math.sin(a) * 0.95],
                             [math.cos(a) * (0.95 - ln), 0, math.sin(a) * (0.95 - ln)]], np.float32)
@@ -2381,13 +2378,13 @@ class App:
 
         # projector light beams (vertical streaks) + rising scan rings
         top = 1.95
-        for k in range(36):
-            a = k * (2 * math.pi / 36)
+        for k in range(16):
+            a = k * (2 * math.pi / 16)
             seg = np.array([[math.cos(a) * 0.62, 0, math.sin(a) * 0.62],
                             [math.cos(a) * 0.55, top, math.sin(a) * 0.55]], np.float32)
             sx, sy, z = view.project(seg)
             if z.min() > 0.25:
-                cv2.line(layer, (int(sx[0]), int(sy[0])), (int(sx[1]), int(sy[1])), (52, 56, 10), 1, AA)
+                cv2.line(layer, (int(sx[0]), int(sy[0])), (int(sx[1]), int(sy[1])), (22, 21, 17), 1, AA)
         for k in range(3):
             hh = ((t * 0.30 + k / 3.0) % 1.0) * top
             amt = (1.0 - hh / top) * 0.9
@@ -2395,15 +2392,14 @@ class App:
 
         # orbiting energy orbs with their orbit paths
         orbs = ((0.78, 0.35, 0.55, 0.0, 0.020), (0.95, -0.55, -0.40, 1.7, 0.016),
-                (0.70, 1.05, 0.70, 3.1, 0.014), (1.05, 0.20, 0.30, 4.4, 0.022),
-                (0.60, -1.00, -0.65, 5.3, 0.012))
+                (0.70, 1.05, 0.70, 3.1, 0.014))
         center = v3(0, 1.0, 0)
         for R, tilt, spd, ph, size in orbs:
             Rm = rot_z(tilt * 0.6) @ rot_x(tilt)
             oa = np.linspace(0, 2 * math.pi, 72)
             orbit = (np.stack([np.cos(oa) * R, np.zeros_like(oa), np.sin(oa) * R * 0.8], 1).astype(np.float32)
                      @ Rm.T) + center
-            poly(orbit, (74, 80, 24), 1, True)
+            poly(orbit, (42, 37, 25), 1, True)
             a = t * spd + ph
             p3 = (v3(math.cos(a) * R, 0, math.sin(a) * R * 0.8) @ Rm.T) + center
             sx, sy, z = view.project(p3[None])
@@ -2470,21 +2466,21 @@ class App:
             glow = cv2.GaussianBlur(small, (0, 0), 4)
             glow = cv2.resize(glow, (ww, hh), interpolation=cv2.INTER_LINEAR).astype(np.float32) / 255
             roi = canvas[r0:r1, c0:c1].astype(np.float32)
-            out = roi + glow[..., None] * np.array(CYAN, np.float32) * 0.42
+            out = roi + glow[..., None] * np.array(CYAN, np.float32) * 0.30
             # translucent glass body: the stage stays visible through the robot
-            alpha = (cv2.GaussianBlur(m8, (3, 3), 0).astype(np.float32) / 255)[..., None] * 0.62
+            alpha = (cv2.GaussianBlur(m8, (3, 3), 0).astype(np.float32) / 255)[..., None] * 0.52
             out = out * (1 - alpha) + Lr.astype(np.float32) * alpha
-            # glowing wireframe + bloom
+            # Keep the wireframe crisp without washing out the shaded mesh.
             egl = cv2.GaussianBlur(Er, (0, 0), 3).astype(np.float32)
-            out += Er.astype(np.float32) * 0.95 + egl * 1.15
-            # bright cyan silhouette outline
+            out += Er.astype(np.float32) * 0.62 + egl * 0.58
+            # restrained cyan silhouette outline
             edge = cv2.subtract(cv2.dilate(m8, np.ones((3, 3), np.uint8)), m8)
             edge = cv2.GaussianBlur(edge, (3, 3), 0).astype(np.float32) / 255
-            out += edge[..., None] * np.array(CYAN, np.float32) * 0.70
+            out += edge[..., None] * np.array(CYAN, np.float32) * 0.48
             # scan band sweeping up the hologram
             by = (1.0 - (t * 0.32) % 1.3) * h - 0.15 * h
             band = np.exp(-((np.arange(r0, r1, dtype=np.float32) - by) / 12.0) ** 2)[:, None, None]
-            out += (alpha + 0.25) * band * np.array(CYAN, np.float32) * 0.45
+            out += (alpha + 0.25) * band * np.array(CYAN, np.float32) * 0.25
             canvas[r0:r1, c0:c1] = np.clip(out, 0, 255).astype(np.uint8)
             self.mini = cv2.addWeighted(Lr, 0.30, Er, 1.0, 0)
 
@@ -2551,7 +2547,7 @@ class App:
         rb = self.robot
         # ---------- left: BLUEPRINT dial + joint bars
         x0, y0, x1, y1 = 268, 118, 424, 334
-        glass_panel(image, x0, y0, x1, y1, "BLUEPRINT", CYAN, 14, alpha=0.66)
+        glass_panel(image, x0, y0, x1, y1, "ROBOT DATA", CYAN, 14, alpha=0.72)
         cx, cy, r = (x0 + x1) // 2, y0 + 92, 38
         cv2.circle(image, (cx, cy), r + 8, CYAN_DARK, 1, AA)
         cv2.circle(image, (cx, cy), r, CYAN_DIM, 1, AA)
@@ -2580,11 +2576,11 @@ class App:
             tint_rrect(image, bx, base - hgt, bx + bw_, base, 3, ORANGE if i == 4 else CYAN, 0.75)
             cv2.line(image, (bx, base - hgt), (bx + bw_, base - hgt), WHITE, 1, AA)
             put_tracked(image, lab, (bx + 2, base + 12), 0.25, INK3, 1)
-        txt(image, f"FACES {self.stats[0]}", (x0 + 16, y1 - 8), 0.30, INK3, 1, shadow=False)
+        txt(image, f"TRIS {self.stats[0]:,}", (x0 + 16, y1 - 8), 0.30, INK3, 1, shadow=False)
 
-        # ---------- right: LIVE SCAN (live wireframe of the robot)
+        # ---------- right: live mesh preview
         sx0, sy0, sx1, sy1 = 836, 118, 976, 334
-        glass_panel(image, sx0, sy0, sx1, sy1, "LIVE SCAN", ORANGE, 14, alpha=0.66)
+        glass_panel(image, sx0, sy0, sx1, sy1, "3D VIEW", ORANGE, 14, alpha=0.72)
         ax0, ay0, ax1, ay1 = sx0 + 12, sy0 + 34, sx1 - 12, sy1 - 34
         aw, ah = ax1 - ax0, ay1 - ay0
         tint_rrect(image, ax0, ay0, ax1, ay1, 6, (20, 22, 8), 0.60)
@@ -2600,8 +2596,9 @@ class App:
         sy_ = ay0 + int(((t * 0.45) % 1.0) * ah)
         cv2.line(image, (ax0, sy_), (ax1, sy_), CYAN, 1, AA)
         brackets(image, ax0, ay0, ax1, ay1, ORANGE, 10, 1)
-        put_tracked(image, "SYNC", (sx0 + 16, sy1 - 12), 0.27, INK2, 2)
-        txt(image, "100%", (sx1 - 16 - tw("100%", 0.34), sy1 - 11), 0.34, GOOD, 1, shadow=False)
+        put_tracked(image, "FACES", (sx0 + 16, sy1 - 12), 0.25, INK2, 1)
+        mesh_count = f"{self.stats[0]:,}"
+        txt(image, mesh_count, (sx1 - 16 - tw(mesh_count, 0.28), sy1 - 11), 0.28, GOOD, 1, shadow=False)
 
     # ---- exploded view labels
     def draw_part_labels(self, image, w, h):
@@ -2730,7 +2727,7 @@ class App:
         cv2.ellipse(image, (cx, cy), (14, 14), 0, 360 - a, 360 - a + 70, ORANGE, 1, AA)
         txt(image, "SA", (cx - 9, cy + 4), 0.4, INK1, 1, FONT_D, False)
         txt(image, ROBOT_NAME, (80, 38), 0.6, INK1, 1, FONT_D)
-        put_tracked(image, f"HOLO COMPANION  V{APP_VERSION}  {int(fps):02d}FPS", (81, 56), 0.27, INK3, 1)
+        put_tracked(image, f"ROBOTICS STUDIO  V{APP_VERSION}  {int(fps):02d}FPS", (81, 56), 0.27, INK3, 1)
         cv2.line(image, (300, 24), (300, 58), HAIR, 1, AA)
 
         if rb.standby:
@@ -2780,7 +2777,7 @@ class App:
     def draw_left(self, image, w, h, t):
         x0, y0, x1, y1 = 14, 82, 250, 238
         live = self.face is not None
-        glass_panel(image, x0, y0, x1, y1, "LIVE TRACKING", CYAN)
+        glass_panel(image, x0, y0, x1, y1, "TRACKING", CYAN)
         yawd, pitd, rold = self.head_pose
         for i, (label, val, rng) in enumerate((("YAW", yawd, 60.0), ("PITCH", pitd, 35.0),
                                                ("ROLL", rold, 35.0))):
@@ -2792,10 +2789,11 @@ class App:
         if live:
             keycap(image, x0 + 16, y1 - 30, "C", "Recalibrate")
         else:
-            txt(image, "Move into camera view", (x0 + 16, y1 - 14), 0.34, INK3, 1, shadow=False)
+            prompt = "Mouse control enabled" if self.args.no_camera else "Move into camera view"
+            txt(image, prompt, (x0 + 16, y1 - 14), 0.34, INK3, 1, shadow=False)
 
         ty0, ty1 = 250, h - 300
-        glass_panel(image, x0, ty0, x1, ty1, "TRY SAYING", CYAN)
+        glass_panel(image, x0, ty0, x1, ty1, "VOICE COMMANDS", CYAN)
         tips = ("Hello / who are you", "Show me the hand", "Explode / assemble",
                 "Zoom in / zoom out", "Rotate / dance / wave", "Stand by / wake up",
                 "Ask me anything")
@@ -2812,17 +2810,33 @@ class App:
     def draw_right(self, image, w, h, t):
         rb = self.robot
         x0, y0, x1, y1 = w - 290, 82, w - 14, 366
-        glass_panel(image, x0, y0, x1, y1, "ROBOT STATUS", CYAN)
-        load = float(np.clip(0.15 + 0.35 * max(rb.arm_raise.values()) / 150.0 + 0.3 * self.explode, 0, 1))
-        gauges = (("POWER", 0.1 if rb.standby else 0.85, CYAN),
-                  ("TRACKING", 0.95 if (self.face is not None or self.hands) else 0.1, CYAN),
-                  ("JOINT LOAD", load, ORANGE if load > 0.6 else CYAN))
-        col_w = (x1 - x0 - 20) / 3.0
-        for i, (label, val, col) in enumerate(gauges):
-            ring_gauge(image, int(x0 + 10 + col_w * (i + 0.5)), y0 + 74, 27, val, label, col)
+        glass_panel(image, x0, y0, x1, y1, "SYSTEM OVERVIEW", CYAN)
+        motion = float(np.clip(max(rb.arm_raise.values()) / 150.0 * 0.65 + self.explode * 0.35, 0, 1))
+        tracking = self.face is not None or bool(self.hands)
+        metrics = (
+            ("ROBOT", "STANDBY" if rb.standby else "ACTIVE", 0.12 if rb.standby else 1.0, GOOD),
+            ("SENSORS", "TRACKING" if tracking else "SEARCHING", 1.0 if tracking else 0.08, CYAN),
+            ("MOTION", f"{motion * 100:.0f}%", motion, ORANGE if motion > 0.6 else CYAN),
+        )
+        gap = 8
+        metric_w = (x1 - x0 - 32 - gap * 2) // 3
+        metric_y = y0 + 38
+        for i, (label, value, level, accent) in enumerate(metrics):
+            mx = x0 + 12 + i * (metric_w + gap)
+            tint_rrect(image, mx, metric_y, mx + metric_w, metric_y + 58, 8, (48, 39, 28), 0.34)
+            cv2.circle(image, (mx + 11, metric_y + 14), 3, accent, -1, AA)
+            put_tracked(image, label, (mx + 20, metric_y + 18), 0.23, INK3, 1)
+            value_scale = 0.28 if len(value) > 7 else 0.34
+            txt(image, value, (mx + 10, metric_y + 39), value_scale, INK1, 1, shadow=False)
+            bar_x0, bar_x1 = mx + 10, mx + metric_w - 10
+            tint_rrect(image, bar_x0, metric_y + 47, bar_x1, metric_y + 51, 2, HAIR, 0.9)
+            if level > 0:
+                tint_rrect(image, bar_x0, metric_y + 47,
+                           bar_x0 + max(2, int((bar_x1 - bar_x0) * level)), metric_y + 51,
+                           2, accent, 0.95)
 
-        yy = y0 + 140
-        ex = put_tracked(image, "TELEMETRY", (x0 + 16, yy), 0.29, INK2, 2)
+        yy = metric_y + 76
+        ex = put_tracked(image, "MOTION DATA", (x0 + 16, yy), 0.29, INK2, 2)
         cv2.line(image, (ex + 10, yy - 4), (x1 - 16, yy - 4), HAIR, 1, AA)
         wrapped = math.degrees((self.view.yaw + math.pi) % (2 * math.pi) - math.pi)
         rows = (("Head yaw", math.degrees(rb.head_yaw), "deg"), ("Head nod", math.degrees(rb.head_nod), "deg"),
@@ -2832,7 +2846,7 @@ class App:
         y = yy + 24
         for i, (label, val, unit_) in enumerate(rows):
             if i % 2 == 0:
-                tint_rrect(image, x0 + 10, y - 13, x1 - 10, y + 5, 5, (230, 255, 220), 0.04)
+                tint_rrect(image, x0 + 10, y - 13, x1 - 10, y + 5, 5, (53, 46, 37), 0.42)
             txt(image, label, (x0 + 18, y), 0.36, INK3, 1, shadow=False)
             s = f"{val:+.1f}"
             txt(image, unit_, (x1 - 18 - tw(unit_, 0.30), y), 0.30, INK3, 1, shadow=False)
@@ -2842,14 +2856,14 @@ class App:
         # AI guide card
         ax0, ay0, ax1, ay1 = w - 290, 378, w - 14, 502
         glass_panel(image, ax0, ay0, ax1, ay1,
-                    f"GUIDE  {self.guide.part}" if self.guide.part else "GUIDE", ORANGE)
+                    f"AI COPILOT  {self.guide.part}" if self.guide.part else "AI COPILOT", ORANGE)
         text = self.guide.text or self.guide.status
-        all_lines = wrap_display_text(text, ax1 - ax0 - 34, 0.35)
-        glines = all_lines[:5]
-        if len(all_lines) > 5:
-            glines[-1] = fit_display_text(glines[-1] + "...", ax1 - ax0 - 34, 0.35)
+        all_lines = wrap_display_text(text, ax1 - ax0 - 34, 0.38)
+        glines = all_lines[:4]
+        if len(all_lines) > 4:
+            glines[-1] = fit_display_text(glines[-1] + "...", ax1 - ax0 - 34, 0.38)
         for i, ln in enumerate(glines):
-            txt(image, ln, (ax0 + 16, ay0 + 48 + i * 14), 0.35, INK1 if i == 0 else INK2, 1, shadow=False)
+            txt(image, ln, (ax0 + 16, ay0 + 48 + i * 16), 0.38, INK1 if i == 0 else INK2, 1, shadow=False)
         cv2.line(image, (ax0 + 16, ay1 - 20), (ax1 - 16, ay1 - 20), HAIR, 1, AA)
         txt(image, fit_display_text(self.guide.status, ax1 - ax0 - 56, 0.30), (ax0 + 28, ay1 - 7),
             0.30, INK3, 1, shadow=False)
@@ -2869,7 +2883,7 @@ class App:
                  "RECOGNIZING": GOOD, "TYPING": ORANGE}.get(st, INK3)
         active = st not in ("MUTED", "TYPE MODE")
         pw_ = pill_width(st, 0.32)
-        glass_panel(image, vx0, vy0, vx1, vy1, "VOICE LINK", CYAN, 16, rule_end=vx1 - 16 - pw_ - 70)
+        glass_panel(image, vx0, vy0, vx1, vy1, "CONVERSATION", CYAN, 16, rule_end=vx1 - 16 - pw_ - 70)
         put_tracked(image, "ENGLISH", (vx1 - 16 - pw_ - 62, vy0 + 24), 0.27, INK3, 2)
         pill(image, vx1 - 16 - pw_, vy0 + 9, st, stcol, active, 22, 0.32)
 
@@ -3001,7 +3015,7 @@ class App:
 
 # --------------------------------------------------------------------------- main
 def parse_args(argv=None):
-    p = argparse.ArgumentParser(description=f"{ROBOT_NAME} Robot 3D - AR hologram humanoid")
+    p = argparse.ArgumentParser(description=f"{ROBOT_NAME} Robot 3D - Intelligent Robotics Studio")
     p.add_argument("--camera", type=int, default=0)
     p.add_argument("--no-camera", action="store_true", help="no webcam / hand tracking (mouse only)")
     p.add_argument("--no-video", action="store_true", help="hide the webcam picture")
@@ -3082,7 +3096,7 @@ def main(argv: Optional[list] = None) -> int:
                 max_num_faces=1, refine_landmarks=False,
                 min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-    win = f"{ROBOT_NAME} Robot 3D v{APP_VERSION}  |  HOLOGRAM"
+    win = f"{ROBOT_NAME} Robot 3D v{APP_VERSION}  |  ROBOTICS STUDIO"
     display_size = [args.width, args.height]
 
     def refresh_display_size():
